@@ -39,7 +39,8 @@ COPY --from=builder /app /app
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 
 RUN mkdir -p /datadir \
-    && chown -R btcpayserver:btcpayserver /datadir /app \
+    mkdir -p /home/btcpayserver \
+    && chown -R btcpayserver:btcpayserver /datadir /app /home/btcpayserver \
     && chmod +x /app/docker-entrypoint.sh
 
 EXPOSE 23000
