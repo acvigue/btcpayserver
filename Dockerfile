@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0.404-bookworm-slim AS builder
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS builder
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 WORKDIR /source
 COPY nuget.config nuget.config
@@ -19,22 +19,31 @@ COPY BTCPayServer/. BTCPayServer/.
 COPY Build/Version.csproj Build/Version.csproj
 ARG CONFIGURATION_NAME=Release
 ARG GIT_COMMIT
-RUN cd BTCPayServer && dotnet publish -p:GitCommit=${GIT_COMMIT} --output /app/ --configuration ${CONFIGURATION_NAME}
+RUN cd BTCPayServer && dotnet publish -p:GitCommit=${GIT_COMMIT} --configuration ${CONFIGURATION_NAME} --output /app/
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0.18-bookworm-slim
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
 
-RUN apt-get update && apt-get install -y --no-install-recommends iproute2 openssh-client ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache bash iproute2 openssh-client ca-certificates \
+    && addgroup -g 523 btcpayserver \
+    && adduser -D -H -G btcpayserver -u 523 btcpayserver
 
-ENV LC_ALL en_US.UTF-8
-ENV LANG en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8 \
+    LANG=en_US.UTF-8 \
+    BTCPAY_DATADIR=/datadir \
+    DOTNET_CLI_TELEMETRY_OPTOUT=1
 
-WORKDIR /datadir
 WORKDIR /app
-ENV BTCPAY_DATADIR=/datadir
-ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 VOLUME /datadir
 
-COPY --from=builder "/app" .
-COPY docker-entrypoint.sh docker-entrypoint.sh
+COPY --from=builder /app /app
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+
+RUN mkdir -p /datadir \
+    && chown -R btcpayserver:btcpayserver /datadir /app \
+    && chmod +x /app/docker-entrypoint.sh
+
+EXPOSE 23000
+
+USER btcpayserver:btcpayserver
+
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
