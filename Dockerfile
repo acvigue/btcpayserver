@@ -25,12 +25,13 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
 
 RUN apk add --no-cache bash iproute2 openssh-client ca-certificates su-exec \
     && addgroup -g 523 btcpayserver \
-    && adduser -D -H -G btcpayserver -u 523 btcpayserver
+    && adduser -D -G btcpayserver -u 523 btcpayserver
 
 ENV LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8 \
     BTCPAY_DATADIR=/datadir \
-    DOTNET_CLI_TELEMETRY_OPTOUT=1
+    DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    HOME=/home/btcpayserver
 
 WORKDIR /app
 VOLUME /datadir
@@ -38,8 +39,7 @@ VOLUME /datadir
 COPY --from=builder /app /app
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 
-RUN mkdir -p /datadir \
-    mkdir -p /home/btcpayserver \
+RUN mkdir -p /datadir /home/btcpayserver/.btcpayserver \
     && chown -R btcpayserver:btcpayserver /datadir /app /home/btcpayserver \
     && chmod +x /app/docker-entrypoint.sh
 
