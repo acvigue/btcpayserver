@@ -23,7 +23,7 @@ RUN cd BTCPayServer && dotnet publish -p:GitCommit=${GIT_COMMIT} --configuration
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
 
-RUN apk add --no-cache bash iproute2 openssh-client ca-certificates \
+RUN apk add --no-cache bash iproute2 openssh-client ca-certificates su-exec \
     && addgroup -g 523 btcpayserver \
     && adduser -D -H -G btcpayserver -u 523 btcpayserver
 
@@ -44,6 +44,6 @@ RUN mkdir -p /datadir \
 
 EXPOSE 23000
 
-USER btcpayserver:btcpayserver
+USER root
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

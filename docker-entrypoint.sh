@@ -21,4 +21,4 @@ if [ -f "$BTCPAY_SSHAUTHORIZEDKEYS" ] && [[ "$BTCPAY_SSHKEYFILE" ]]; then
     fi
 fi
 
-exec dotnet BTCPayServer.dll
+exec su-exec btcpayserver:btcpayserver dotnet BTCPayServer.dll
